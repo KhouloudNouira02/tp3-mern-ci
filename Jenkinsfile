@@ -1,4 +1,3 @@
-
 pipeline {
   agent any
 
@@ -117,7 +116,7 @@ pipeline {
             cat trivy_client.txt
 
             echo "=== DOCKER HUB LOGIN ==="
-            echo "$DH_PASS" | docker login -u "$khouloudnouira" --password-stdin
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
             echo "=== PUSH CLIENT WITH RETRY ==="
 
