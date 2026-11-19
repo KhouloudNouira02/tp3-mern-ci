@@ -1,3 +1,4 @@
+// trigger full build
 pipeline {
   agent any
   options { skipDefaultCheckout(true) }
