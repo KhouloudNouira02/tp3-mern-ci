@@ -3,8 +3,8 @@ pipeline {
   options { skipDefaultCheckout(true) }
   triggers { pollSCM('H/5 * * * *') }
   environment {
-    IMAGE_SERVER = 'TON_USER_DOCKERHUB/mern-server'
-    IMAGE_CLIENT = 'TON_USER_DOCKERHUB/mern-client'
+  IMAGE_SERVER = 'khouloudnouira/mern-server'
+  IMAGE_CLIENT = 'khouloudnouira/mern-client'
   }
   stages {
     stage('Checkout') {
