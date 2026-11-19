@@ -66,8 +66,19 @@ pipeline {
             echo "=== DOCKER HUB LOGIN ==="
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
-            echo "=== PUSH SERVER ==="
-            docker push "$IMAGE_SERVER:$BUILD_NUMBER"
+            echo "=== PUSH SERVER WITH RETRY ==="
+
+            attempt=1
+            until docker push "$IMAGE_SERVER:$BUILD_NUMBER"; do
+              if [ "$attempt" -ge 3 ]; then
+                echo "SERVER PUSH FAILED AFTER 3 ATTEMPTS"
+                exit 1
+              fi
+
+              echo "SERVER PUSH FAILED - RETRY $attempt"
+              attempt=$((attempt + 1))
+              sleep 15
+            done
           '''
         }
       }
@@ -108,8 +119,19 @@ pipeline {
             echo "=== DOCKER HUB LOGIN ==="
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
-            echo "=== PUSH CLIENT ==="
-            docker push "$IMAGE_CLIENT:$BUILD_NUMBER"
+            echo "=== PUSH CLIENT WITH RETRY ==="
+
+            attempt=1
+            until docker push "$IMAGE_CLIENT:$BUILD_NUMBER"; do
+              if [ "$attempt" -ge 3 ]; then
+                echo "CLIENT PUSH FAILED AFTER 3 ATTEMPTS"
+                exit 1
+              fi
+
+              echo "CLIENT PUSH FAILED - RETRY $attempt"
+              attempt=$((attempt + 1))
+              sleep 15
+            done
           '''
         }
       }
