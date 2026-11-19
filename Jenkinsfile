@@ -2,13 +2,21 @@
 pipeline {
   agent any
 
-  options { skipDefaultCheckout(true) }
-
-  parameters {
-    booleanParam(name: 'FORCE_ALL', defaultValue: false, description: 'Build all')
+  options {
+    skipDefaultCheckout(true)
   }
 
-  triggers { pollSCM('H/5 * * * *') }
+  parameters {
+    booleanParam(
+      name: 'FORCE_ALL',
+      defaultValue: false,
+      description: 'Build all'
+    )
+  }
+
+  triggers {
+    pollSCM('H/5 * * * *')
+  }
 
   environment {
     IMAGE_SERVER = 'khouloudnouira/mern-server'
@@ -32,6 +40,7 @@ pipeline {
           expression { params.FORCE_ALL }
         }
       }
+
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'dockerhub',
@@ -41,18 +50,23 @@ pipeline {
           sh '''
             set -eu
 
+            echo "=== BUILD SERVER ==="
             docker build -t "$IMAGE_SERVER:$BUILD_NUMBER" server
 
+            echo "=== SCAN SERVER WITH TRIVY ==="
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
+              -v trivy-cache:/root/.cache/ \
               aquasec/trivy:0.76.2 image \
               --timeout 15m \
               "$IMAGE_SERVER:$BUILD_NUMBER" > trivy_server.txt
 
             cat trivy_server.txt
 
+            echo "=== DOCKER HUB LOGIN ==="
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
+            echo "=== PUSH SERVER ==="
             docker push "$IMAGE_SERVER:$BUILD_NUMBER"
           '''
         }
@@ -68,6 +82,7 @@ pipeline {
           expression { params.FORCE_ALL }
         }
       }
+
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'dockerhub',
@@ -77,18 +92,23 @@ pipeline {
           sh '''
             set -eu
 
+            echo "=== BUILD CLIENT ==="
             docker build -t "$IMAGE_CLIENT:$BUILD_NUMBER" client
 
+            echo "=== SCAN CLIENT WITH TRIVY ==="
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
+              -v trivy-cache:/root/.cache/ \
               aquasec/trivy:0.76.2 image \
               --timeout 15m \
               "$IMAGE_CLIENT:$BUILD_NUMBER" > trivy_client.txt
 
             cat trivy_client.txt
 
+            echo "=== DOCKER HUB LOGIN ==="
             echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
+            echo "=== PUSH CLIENT ==="
             docker push "$IMAGE_CLIENT:$BUILD_NUMBER"
           '''
         }
@@ -98,7 +118,8 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'trivy_*.txt', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'trivy_*.txt',
+                       allowEmptyArchive: true
 
       sh '''
         docker logout || true
