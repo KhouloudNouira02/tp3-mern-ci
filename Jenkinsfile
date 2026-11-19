@@ -1,11 +1,13 @@
-// trigger full build
 pipeline {
   agent any
   options { skipDefaultCheckout(true) }
+  parameters {
+    booleanParam(name: 'FORCE_ALL', defaultValue: false, description: 'Build all')
+  }
   triggers { pollSCM('H/5 * * * *') }
   environment {
-  IMAGE_SERVER = 'khouloudnouira/mern-server'
-  IMAGE_CLIENT = 'khouloudnouira/mern-client'
+    IMAGE_SERVER = 'khouloudnouira/mern-server'
+    IMAGE_CLIENT = 'khouloudnouira/mern-client'
   }
   stages {
     stage('Checkout') {
@@ -20,6 +22,7 @@ pipeline {
           changeset 'server/**'
           changeset 'Jenkinsfile'
           expression { env.BUILD_NUMBER == '1' }
+          expression { params.FORCE_ALL }
         }
       }
       steps {
@@ -48,6 +51,7 @@ pipeline {
           changeset 'client/**'
           changeset 'Jenkinsfile'
           expression { env.BUILD_NUMBER == '1' }
+          expression { params.FORCE_ALL }
         }
       }
       steps {
